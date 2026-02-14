@@ -6,9 +6,9 @@ import os
 
 app = Flask(__name__)
 
-WIDTH = 700
-HEIGHT = 180
-FONT_SIZE = 60
+WIDTH = 1200
+HEIGHT = 300
+FONT_SIZE = 160
 FRAME_COUNT = 5
 FRAME_DURATION = 1000
 
@@ -48,7 +48,7 @@ def generate_gif(target):
             ((WIDTH - w) // 2, (HEIGHT - h) // 2),
             text,
             font=font,
-            fill=(255, 0, 0)
+            fill=(white)
         )
 
         frames.append(img)
@@ -109,4 +109,5 @@ def countdown_gif():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
+
     app.run(host="0.0.0.0", port=port)
