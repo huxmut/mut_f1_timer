@@ -1,26 +1,31 @@
 from flask import Flask, request, send_file, redirect
 from PIL import Image, ImageDraw, ImageFont
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import io
 import os
 
 app = Flask(__name__)
 
+# Image and font settings
 WIDTH = 1200
 HEIGHT = 300
 FONT_SIZE = 160
-FRAME_COUNT = 5
+FRAME_COUNT = 3
 FRAME_DURATION = 1000
 
-target_time = None
+# AEST timezone
+AEST = timezone(timedelta(hours=10))
 
+# Global target time
+mut_f1_timer = None
 
+# Format remaining time (days, hours, minutes)
 def format_remaining(target):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(AEST)
     total_seconds = int((target - now).total_seconds())
 
     if total_seconds <= 0:
-        return "you missed the session"
+        return "0d 0h 0m"
 
     days = total_seconds // 86400
     hours = (total_seconds % 86400) // 3600
@@ -28,11 +33,15 @@ def format_remaining(target):
 
     return f"{days}d {hours}h {minutes}m"
 
-
+# Generate the countdown GIF
 def generate_gif(target):
     frames = []
 
-    font = ImageFont.load_default()
+    # Try large font, fallback to default
+    try:
+        font = ImageFont.truetype("DejaVuSans-Bold.ttf", FONT_SIZE)
+    except:
+        font = ImageFont.load_default()
 
     text = format_remaining(target)
 
@@ -48,7 +57,7 @@ def generate_gif(target):
             ((WIDTH - w) // 2, (HEIGHT - h) // 2),
             text,
             font=font,
-            fill=(white)
+            fill="white"  # ✅ MUST be a string
         )
 
         frames.append(img)
@@ -62,52 +71,50 @@ def generate_gif(target):
         duration=FRAME_DURATION,
         loop=0
     )
-
     output.seek(0)
     return output
 
-
+# HTML form to set target date/time
 @app.route("/", methods=["GET", "POST"])
 def set_time():
-    global target_time
+    global mut_f1_timer
 
     if request.method == "POST":
         value = request.form.get("target")
         try:
             dt = datetime.fromisoformat(value)
-            target_time = dt.replace(tzinfo=timezone.utc)
+            mut_f1_timer = dt.replace(tzinfo=AEST)
             return redirect("/")
         except:
             pass
 
-    current = target_time.isoformat() if target_time else ""
+    current = mut_f1_timer.isoformat() if mut_f1_timer else ""
 
     return f"""
     <html>
-    <body style="background:#111;color:white;text-align:center;font-family:sans-serif;">
+    <body style="background:#000;color:white;text-align:center;font-family:sans-serif;">
         <h1>Set Countdown</h1>
         <form method="post">
-            <input type="datetime-local" name="target" required>
+            <input type="datetime-local" name="target" required style="font-size:1.2em;padding:8px;">
             <br><br>
-            <button type="submit">Set</button>
+            <button type="submit" style="font-size:1.2em;padding:8px 16px;">Set</button>
         </form>
         <p>Current target: {current or "Not set"}</p>
-        <p>Public image: /mut_f1_timer</p>
+        <p>Public image: /mut_f1_timer.gif</p>
     </body>
     </html>
     """
 
-
-@app.route("/mut_f1_timer")
+# Serve the countdown GIF
+@app.route("/mut_f1_timer.gif")
 def countdown_gif():
-    if not target_time:
+    if not mut_f1_timer:
         return "Countdown not set", 404
 
-    gif = generate_gif(target_time)
+    gif = generate_gif(mut_f1_timer)
     return send_file(gif, mimetype="image/gif")
 
-
+# Run server
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-
     app.run(host="0.0.0.0", port=port)
