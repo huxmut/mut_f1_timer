@@ -9,16 +9,15 @@ app = Flask(__name__)
 # Image settings
 WIDTH = 1200
 HEIGHT = 300
-BASE_FONT_SIZE = 130
+FONT_SIZE = 160
 
-FRAME_COUNT = 60
-FRAME_DURATION = 1000  # 1 second per frame
-
-LOGO_PATH = "/mnt/data/ocau_xenforo_logo.png"
+FRAME_COUNT = 60          # 60 seconds animation
+FRAME_DURATION = 1000     # 1 second per frame
 
 # AEST timezone
 AEST = timezone(timedelta(hours=10))
 
+# Global countdown target
 mut_f1_timer = None
 
 
@@ -37,49 +36,19 @@ def format_remaining_with_seconds(target, offset=0):
     return f"{days}d {hours}h {minutes}m {seconds}s"
 
 
-def get_fitting_font(draw, text):
-    size = BASE_FONT_SIZE
-
-    while size > 20:
-        try:
-            font = ImageFont.truetype("DejaVuSans-Bold.ttf", size)
-        except:
-            font = ImageFont.load_default()
-
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_width = bbox[2] - bbox[0]
-
-        if text_width <= WIDTH - 60:
-            return font
-
-        size -= 5
-
-    return font
-
-
-def load_background():
-    bg = Image.open(LOGO_PATH).convert("RGB")
-    bg = bg.resize((WIDTH, HEIGHT))
-
-    # Add subtle dark overlay for text contrast
-    overlay = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 120))
-    bg = bg.convert("RGBA")
-    bg = Image.alpha_composite(bg, overlay)
-
-    return bg.convert("RGB")
-
-
 def generate_gif(target):
     frames = []
-    background = load_background()
+
+    try:
+        font = ImageFont.truetype("DejaVuSans-Bold.ttf", FONT_SIZE)
+    except:
+        font = ImageFont.load_default()
 
     for i in range(FRAME_COUNT):
         text = format_remaining_with_seconds(target, offset=i)
 
-        img = background.copy()
+        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
         draw = ImageDraw.Draw(img)
-
-        font = get_fitting_font(draw, text)
 
         bbox = draw.textbbox((0, 0), text, font=font)
         w = bbox[2] - bbox[0]
