@@ -9,7 +9,7 @@ app = Flask(__name__)
 # Image settings
 WIDTH = 1200
 HEIGHT = 300
-FONT_SIZE = 160
+FONT_SIZE = 130
 
 FRAME_COUNT = 60          # 60 seconds animation
 FRAME_DURATION = 1000     # 1 second per frame
@@ -123,3 +123,4 @@ def countdown_gif():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
